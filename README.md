@@ -1,9 +1,9 @@
-Descripción del proyecto.
-este proyecto es un catalogo diseñado para mostrar producto los cuales son creados en clase
-• Tecnologías utilizadas.
-se utilizo tecnologicas como SQL, etiquetas HTML, JS, y PHP ademas de postman
-• Pasos básicos para clonar y ejecutar el sistema.
-lo primero seria clonar el repo, luego entrar a la carpeta instalar las dependencias y ejecutar el sistma
+• Descripción del proyecto •
+Este proyecto es un catalogo diseñado para mostrar producto los cuales son creados en clase
+• Tecnologías utilizadas •
+Se utilizo tecnologicas como SQL, etiquetas HTML, JS, y PHP ademas de postman
+• Pasos básicos para clonar y ejecutar el sistema •
+Lo primero seria clonar el repo, luego entrar a la carpeta instalar las dependencias y ejecutar el sistma
 
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
