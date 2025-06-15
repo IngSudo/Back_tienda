@@ -23,7 +23,7 @@
     <form id="addForm" class="bg-white p-4 rounded shadow mb-6 flex flex-col gap-2">
       <input type="text" id="titulo" placeholder="Título" class="border p-2 rounded" required>
       <input type="text" id="descripcion" placeholder="Descripción" class="border p-2 rounded" required>
-      <input type="number" id="precio" placeholder="Precio" class="border p-2 rounded" required>
+      <input type="number" id="precio" placeholder="Precio" class="border p-2 rounded" required step="0.01" min="0">
       <input type="file" id="image" accept="image/png, image/jpeg" class="border p-2 rounded">
       <input type="number" id="stock" placeholder="Stock" class="border p-2 rounded" required>
       <button type="submit" class="bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700">Agregar Producto</button>
@@ -42,7 +42,7 @@
           <input type="hidden" id="editId">
           <input type="text" id="editTitulo" placeholder="Título" class="border p-2 rounded" required>
           <input type="text" id="editDescripcion" placeholder="Descripción" class="border p-2 rounded" required>
-          <input type="number" id="editPrecio" placeholder="Precio" class="border p-2 rounded" required>
+          <input type="number" id="editPrecio" placeholder="Precio" class="border p-2 rounded" required step="0.01" min="0">
           <input type="file" id="editImage" accept="image/png, image/jpeg" class="border p-2 rounded">
           <input type="number" id="editStock" placeholder="Stock" class="border p-2 rounded" required>
           <button type="submit" class="bg-blue-600 text-white rounded px-3 py-1 hover:bg-blue-700">Guardar Cambios</button>
