@@ -33,9 +33,10 @@ class ProductoController extends Controller
             'descripcion' => 'required|string',
             'precio' => 'required|numeric|min:0',
             'image' => 'nullable|string',
+            'stock' => 'required|integer|min:0',
             'categorias' => 'nullable|array',
         ]);
-    
+        \Log::info('Stock recibido:', ['stock' => $validated['stock']]);
         $producto = Producto::create($validated);
 
         if ($request->has('categorias')) {
@@ -65,22 +66,21 @@ class ProductoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Producto $producto)
+    public function update(Request $request, $id)
     {
+        $producto = Producto::findOrFail($id);
+
         $validated = $request->validate([
             'titulo' => 'sometimes|required|string|max:255',
             'descripcion' => 'sometimes|required|string',
             'precio' => 'sometimes|required|numeric|min:0',
-            'imagen' => 'nullable|string',
-            'categorias' => 'nullable|array',
+            'image' => 'nullable|string',
+            'stock' => 'sometimes|required|integer|min:0',
         ]);
 
         $producto->update($validated);
 
-        if ($request->has('categorias')) {
-            $producto->categorias()->sync($request->categorias);
-        }
-        return response()->json($producto, 200); // actualiza el producto y lo devuelve en formato JSON
+        return response()->json($producto, 200);
     }
 
     /**
@@ -90,6 +90,6 @@ class ProductoController extends Controller
     {
         $producto = Producto::findOrFail($id);
         $producto->delete();
-        return response()->json(['message'=>'Producto Eliminado correctamente'], 204); // elimina el producto y devuelve un código de estado 204 No Content
+        return response()->json(['message' => 'Producto eliminado']);
     }
 }

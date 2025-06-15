@@ -1,4 +1,4 @@
-escripción del proyecto.
+Descripción del proyecto.
 este proyecto es un catalogo diseñado para mostrar producto los cuales son creados en clase
 • Tecnologías utilizadas.
 se utilizo tecnologicas como SQL, etiquetas HTML, JS, y PHP ademas de postman

@@ -1,4 +1,3 @@
-// Este script obtiene y muestra los productos desde la API Laravel
 
 fetch('http://127.0.0.1:8000/api/productos')
   .then(response => response.json())

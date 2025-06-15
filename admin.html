@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Admin - Productos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="firebase.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <header class="bg-purple-200 py-2 px-4 flex justify-between items-center shadow-sm">
+    <span class="text-xl font-bold text-green-600">Panel Admin</span>
+    <button id="logoutBtn" class="bg-red-500 text-white rounded px-4 py-2 hover:bg-red-700 transition">Cerrar sesión</button>
+  </header>
+
+  <div id="msgBox" class="fixed top-4 left-1/2 -translate-x-1/2 z-50"></div>
+
+  <main class="max-w-4xl mx-auto py-8">
+    <h1 class="text-2xl font-bold mb-4">Agregar Productos</h1>
+
+    <!-- Formulario para agregar producto -->
+    <form id="addForm" class="bg-white p-4 rounded shadow mb-6 flex flex-col gap-2">
+      <input type="text" id="titulo" placeholder="Título" class="border p-2 rounded" required>
+      <input type="text" id="descripcion" placeholder="Descripción" class="border p-2 rounded" required>
+      <input type="number" id="precio" placeholder="Precio" class="border p-2 rounded" required>
+      <input type="file" id="image" accept="image/png, image/jpeg" class="border p-2 rounded">
+      <input type="number" id="stock" placeholder="Stock" class="border p-2 rounded" required>
+      <button type="submit" class="bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700">Agregar Producto</button>
+    </form>
+    <h1 class="text-2xl font-bold mb-4 p-6">Todos los Productos</h1>
+    <div id="productos" class="grid grid-cols-1 gap-4"></div>
+
+    <!-- Modal para editar producto -->
+    <div id="modalEdit" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+      <div class="bg-white rounded shadow-lg p-6 max-w-sm w-full">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold">Editar Producto</h2>
+          <button id="closeEditModal" class="text-gray-500 hover:text-gray-700">&times;</button>
+        </div>
+        <form id="editForm" class="flex flex-col gap-2">
+          <input type="hidden" id="editId">
+          <input type="text" id="editTitulo" placeholder="Título" class="border p-2 rounded" required>
+          <input type="text" id="editDescripcion" placeholder="Descripción" class="border p-2 rounded" required>
+          <input type="number" id="editPrecio" placeholder="Precio" class="border p-2 rounded" required>
+          <input type="file" id="editImage" accept="image/png, image/jpeg" class="border p-2 rounded">
+          <input type="number" id="editStock" placeholder="Stock" class="border p-2 rounded" required>
+          <button type="submit" class="bg-blue-600 text-white rounded px-3 py-1 hover:bg-blue-700">Guardar Cambios</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script>
+
+    async function eliminarImagenFirebase(url) {
+      if (!url) return;
+      try {
+        const matches = url.match(/\/o\/([^?]+)\?/);
+        if (!matches || !matches[1]) throw new Error("No se pudo extraer la ruta del archivo");
+        const filePath = decodeURIComponent(matches[1]); 
+        const storageRef = firebase.storage().ref(filePath);
+        await storageRef.delete();
+      } catch (err) {
+        console.warn("No se pudo eliminar la imagen de Firebase:", err.message);
+      }
+    }
+
+    function showMsg(msg, color = 'bg-green-600') {
+      const msgBox = document.getElementById('msgBox');
+      msgBox.innerHTML = `
+        <div class="px-4 py-2 rounded shadow text-white font-semibold mb-2 ${color} animate-bounce-in">
+          ${msg}
+        </div>
+      `;
+     setTimeout(() => msgBox.innerHTML = '', 2500);
+  }
+
+    const msgBox = document.getElementById('msgBox');
+    const logoutMsg = localStorage.getItem('logoutMsg');
+    if (logoutMsg) {
+      showMsg(logoutMsg, 'bg-blue-600');
+      localStorage.removeItem('logoutMsg');
+    }
+
+    function handleAuthError(response) {
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = 'prod.html';
+        throw new Error('Sesión expirada');
+      }
+    }
+    // Se obtiene el token del login 
+    let token = localStorage.getItem('token');
+
+    // Cerrar sesión
+    document.getElementById('logoutBtn').onclick = async () => {
+      const resLogout = await fetch('http://127.0.0.1:8000/api/logout', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      handleAuthError(resLogout);
+      localStorage.setItem('logoutMsg', 'Sesión cerrada correctamente');
+      localStorage.removeItem('token');
+      window.location.href = 'prod.html';
+    };
+
+    // Verifica si hay token, si no, redirige a login
+    if (!token) {
+      window.location.href = 'prod.html';
+    }
+
+
+    // Mostrar productos
+    async function cargarProductos() {
+      const res = await fetch('http://127.0.0.1:8000/api/productos');
+      const productos = await res.json();
+      const cont = document.getElementById('productos');
+      cont.innerHTML = '';
+      productos.forEach(prod => {
+        const div = document.createElement('div');
+        div.className = 'bg-blue-50 rounded shadow p-4 flex flex-col sm:flex-row items-center gap-4';
+        div.innerHTML = `
+          <img src="${prod.image || prod.imagen}" alt="${prod.titulo}" class="w-24 h-24 object-contain rounded bg-white">
+          <div class="flex-1">
+            <h2 class="font-bold">${prod.titulo}</h2>
+            <p>${prod.descripcion}</p>
+            <p class="text-green-700 font-semibold">Precio: $${prod.precio}</p>
+            <p>Stock: ${prod.stock}</p>
+          </div>
+          <div class="flex flex-col gap-2">
+            <button onclick="editarProducto(${prod.id})" class="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500">Editar</button>
+            <button onclick="eliminarProducto(${prod.id})" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-700">Eliminar</button>
+          </div>
+        `;
+        cont.appendChild(div);
+      });
+    }
+
+    // Agregar producto
+    document.getElementById('addForm').onsubmit = async (e) => {
+      showMsg('Producto agregado correctamente', 'bg-green-600');
+      e.preventDefault();
+      const fileInput = document.getElementById('image');
+      const file = fileInput.files[0];
+      let imageUrl = null;
+
+      if (file) {
+        try {
+          imageUrl = await subirImagenFirebase(file);
+        } catch (err) {
+          showMsg(err.message, 'bg-red-500');
+          return;
+        }
+      }
+
+      const data = {
+        titulo: document.getElementById('titulo').value,
+        descripcion: document.getElementById('descripcion').value,
+        precio: document.getElementById('precio').value,
+        stock: document.getElementById('stock').value,
+      };
+      if (imageUrl) {
+        data.image = imageUrl;
+      }
+
+      const resAdd = await fetch('http://127.0.0.1:8000/api/productos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(data)
+      });
+      handleAuthError(resAdd);
+      showMsg('Producto agregado correctamente', 'bg-green-600');
+      cargarProductos();
+      e.target.reset();
+    };
+
+    // Eliminar producto
+    window.eliminarProducto = async (id) => {
+      const res = await fetch('http://127.0.0.1:8000/api/productos');
+      const productos = await res.json();
+      const prod = productos.find(p => p.id == id);
+      const imageUrl = prod ? (prod.image || prod.imagen) : null;
+
+      showMsg('Producto eliminado correctamente', 'bg-red-600');
+      const resDel = await fetch(`http://127.0.0.1:8000/api/productos/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      handleAuthError(resDel);
+      if (imageUrl) await eliminarImagenFirebase(imageUrl);
+
+      cargarProductos();
+    };
+
+    const modalEdit = document.getElementById('modalEdit');
+    const closeEditModal = document.getElementById('closeEditModal');
+    const editForm = document.getElementById('editForm');
+
+    // Cierra el modal al hacer click en la X
+    closeEditModal.onclick = () => modalEdit.classList.add('hidden');
+
+    window.editarProducto = async (id) => {
+      const res = await fetch('http://127.0.0.1:8000/api/productos');
+      const productos = await res.json();
+      const prod = productos.find(p => p.id === id);
+      if (!prod) return;
+
+      document.getElementById('editId').value = prod.id;
+      document.getElementById('editTitulo').value = prod.titulo;
+      document.getElementById('editDescripcion').value = prod.descripcion;
+      document.getElementById('editPrecio').value = prod.precio;
+      document.getElementById('editStock').value = prod.stock;
+
+      modalEdit.classList.remove('hidden');
+    };
+
+    
+    editForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('editId').value;
+      const fileInput = document.getElementById('editImage');
+      const file = fileInput.files[0];
+      let imageUrl = null;
+
+      const res = await fetch('http://127.0.0.1:8000/api/productos');
+      const productos = await res.json();
+      const prod = productos.find(p => p.id == id);
+      const oldImageUrl = prod ? (prod.image || prod.imagen) : null;
+
+      if (file) {
+        try {
+          if (oldImageUrl) await eliminarImagenFirebase(oldImageUrl);
+          imageUrl = await subirImagenFirebase(file);
+        } catch (err) {
+          showMsg(err.message, 'bg-red-500');
+          return;
+        }
+      }
+
+      const data = {
+        titulo: document.getElementById('editTitulo').value,
+        descripcion: document.getElementById('editDescripcion').value,
+        precio: document.getElementById('editPrecio').value,
+        stock: document.getElementById('editStock').value,
+      };
+      if (imageUrl) {
+        data.image = imageUrl;
+      }
+
+      const resEdit = await fetch(`http://127.0.0.1:8000/api/productos/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(data)
+      });
+      handleAuthError(resEdit);
+      showMsg('Producto editado correctamente', 'bg-green-600');
+      modalEdit.classList.add('hidden');
+      cargarProductos();
+    };
+
+    cargarProductos();
+  </script>
+  
+</body>
+</html>

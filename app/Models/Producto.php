@@ -10,7 +10,7 @@ class Producto extends Model
         'titulo',
         'descripcion',
         'precio',
-        'imagen',
+        'image',
         'stock',
     ];
 
